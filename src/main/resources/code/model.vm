@@ -1,0 +1,21 @@
+#if($specifyPackage)package ${specifyPackage};#end
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+#set($className=${utils.tableNameToClassName($table.name)})
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ${className} implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
+        
+#foreach($column in $table.columns)
+    /** $!column.comment */
+    private ${utils.columnTypeToJavaType($column.type).getName()} ${utils.columnNameToFieldName($column.name)};
+
+#end
+
+}

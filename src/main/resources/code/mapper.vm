@@ -1,0 +1,167 @@
+#if($specifyPackage)package ${specifyPackage};
+#end
+
+#set($className = "${utils.tableNameToClassName(${table.name})}")
+#if(${basePackage})
+import ${basePackage}.model.${utils.tableNameToClassName(${table.name})};
+#else
+import model.${utils.tableNameToClassName(${table.name})};
+#end
+import java.util.Collection;
+import java.util.List;
+import org.apache.ibatis.annotations.*;
+
+#set($modelClass = $utils.tableNameToClassName($table.name))
+#set($modelInstance = $utils.uncapitalize($utils.tableNameToClassName($table.name)))
+#set($liteFields = $utils.getLiteFieldsString($table))
+#set($liteParams = $utils.getLiteParamsString($table))
+#set($autoIncrementFields = $utils.getAutoIncrementFieldsString($table))
+#if($autoIncrementFields != "")
+#set($allFields = "$autoIncrementFields, $liteFields")
+#else
+#set($allFields = $liteFields)
+#end
+#macro(none)#end
+#macro(valuesStatement $columns)
+#set($ifFirst = 0)
+#foreach($column in $columns)#if($column.isAutoIncrement())#none()#else#if($ifFirst>0),#else#set($ifFirst=1)#end#{${utils.columnNameToFieldName($column.name)}}#end#end
+#end
+#macro(paramStatement $columns)
+#foreach($column in $columns)#if($velocityCount>1),#end#none()@Param("${utils.columnNameToFieldName($column.name)}") ${column.type.getJavaType().getName()} ${utils.columnNameToFieldName($column.name)}#end
+#end
+#macro(getByIndexSql $table $idx)
+#set($sepFlag=0)
+#set($sql="select $allFields from `${table.name}` where")
+#foreach($part in $idx.members)
+#if($sepFlag > 0)
+#set($sql="$sql and")
+#end
+#set($sepFlag=1)
+#set($sql="$sql `$part.name`=#{${utils.columnNameToFieldName($part.name)}}")
+#end
+$sql#end
+#macro(getByIndexSqlFirst $table $idx)
+#set($sepFlag=0)
+#set($sql="select $allFields from `${table.name}` where")
+#foreach($part in $idx.members)
+#if($sepFlag <= 0)
+#set($sepFlag=1)
+#set($sql="$sql `$part.name`=#{${utils.columnNameToFieldName($part.name)}}")
+#end
+#end
+$sql#end
+#macro(updateByIndexSql $table $idx)
+#set($sql="update `$table.name` set ")
+#set($sepFlag=0)
+#foreach($column in $table.columns)
+#set($ignoreFlag=false)
+#foreach($part in $idx.members)
+#if($part.name == $column.name)
+#set($ignoreFlag=true)
+#end
+#end
+#if($column.isAutoIncrement())
+#set($ignoreFlag=true)
+#end
+#if($ignoreFlag)
+#none()
+#else
+#if($sepFlag > 0)
+#set($sql="$sql,")
+#else
+#set($sepFlag=1)
+#end
+#set($sql="$sql`$column.name`=#{${utils.columnNameToFieldName($column.name)}}")
+#end
+#end
+#set($sepFlag=0)
+#set($sql="$sql where")
+#foreach($part in $idx.members)
+#if($sepFlag > 0)
+#set($sql="$sql and")
+#end
+#set($sql="$sql `$part.name`=#{${utils.columnNameToFieldName($part.name)}}")
+#set($sepFlag=1)
+#end
+$sql#end
+#macro(updateByPrimaryKeySql $table $idx)
+#set($sql="update `$table.name` set ")
+#set($sepFlag=0)
+#foreach($column in $table.columns)
+#set($ignoreFlag=false)
+#foreach($part in $idx.members)
+#if($part.name == $column.name)
+#set($ignoreFlag=true)
+#end
+#end
+#if($column.isAutoIncrement())
+#set($ignoreFlag=true)
+#end
+#if($ignoreFlag)
+#none()
+#else
+#if($sepFlag > 0)
+#set($sql="$sql,")
+#else
+#set($sepFlag=1)
+#end
+#set($sql="$sql`$column.name`=#{${utils.columnNameToFieldName($column.name)}}")
+#end
+#end
+#set($sepFlag=0)
+#set($sql="$sql where")
+#foreach($part in $idx.members)
+#if($sepFlag > 0)
+#set($sql="$sql and")
+#end
+#set($sepFlag=1)
+#set($sql="$sql `$part.name`=#{${utils.columnNameToFieldName($part.name)}}")
+#end
+$sql#end
+#macro(resultAnnotation)
+    @Results({
+#foreach($column in $table.columns)
+    @Result(property = "${utils.columnNameToFieldName($column.name)}" , column ="$column.name" )#if($velocityCount != $table.columns.size()),
+#end
+#end
+   })
+#end
+@Mapper
+public interface ${className}Mapper {
+
+    @Insert("insert into `$table.name` ($liteFields) values (#valuesStatement($table.columns))")
+    @Options(useGeneratedKeys = true, keyProperty = "${table.primaryKey.members[0].name}", keyColumn = "${table.primaryKey.members[0].name}")
+    public int insert($modelClass $modelInstance);
+
+    @Select("select $allFields from `${table.name}`")
+    #resultAnnotation()
+    public List<$modelClass> getAll();
+
+    @Select("#getByIndexSql($table $table.primaryKey)")
+    #resultAnnotation()
+    public $modelClass getBy${utils.getMethodName($table.primaryKey)}(#paramStatement($table.primaryKey.members));
+
+    @Update("#updateByPrimaryKeySql($table $table.primaryKey)")
+    public int updateBy${utils.getMethodName($table.primaryKey)}($modelClass $modelInstance);
+
+#foreach($idx in $table.indexes)
+#if($idx.isUnique())
+    @Select("#getByIndexSql($table $idx)")
+    #resultAnnotation()
+    public $modelClass getBy${utils.getMethodName($idx)}(#paramStatement($idx.members));
+
+    @Update("#updateByIndexSql($table $idx)")
+    public int updateBy${utils.getMethodName($idx)}($modelClass $modelInstance);
+#else
+    @Select("#getByIndexSql($table $idx)")
+    #resultAnnotation()
+    public List<$modelClass> getBy${utils.getMethodName($idx)}(#paramStatement($idx.members));
+#end
+#end
+
+#if($table.primaryKey.members.size() == 1)
+    @Select("select $allFields from `${table.name}` where `id` > #{cursor} limit #{limit}")
+    public List<$modelClass> getByCursorAndLimit(@Param("cursor") ${table.primaryKey.members[0].type.getJavaType().getName()} cursor, @Param("limit") int limit);
+#end
+
+}
