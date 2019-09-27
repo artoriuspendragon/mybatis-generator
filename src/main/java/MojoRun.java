@@ -15,23 +15,23 @@ import java.sql.SQLException;
 @Mojo(name = "generate")
 public class MojoRun extends AbstractMojo {
 
-    @Parameter(property = "gr.host", defaultValue = "127.0.0.1")
+    @Parameter(property = "cg.host", defaultValue = "127.0.0.1")
     private String host;
-    @Parameter(property = "gr.port", defaultValue = "3306")
+    @Parameter(property = "cg.port", defaultValue = "3306")
     private String port;
-    @Parameter(property = "gr.database", required = true)
+    @Parameter(property = "cg.database", required = true)
     private String database;
-    @Parameter(property = "gr.user", required = true)
+    @Parameter(property = "cg.user", required = true)
     private String user;
-    @Parameter(property = "gr.password", required = true)
+    @Parameter(property = "cg.password", required = true)
     private String password;
     @Parameter(defaultValue = "${project.build.sourceDirectory}", readonly = true, required = true)
     private String sourceDirectory;
-    @Parameter(property = "gr.targetPackage", required = true)
+    @Parameter(property = "cg.targetPackage", required = true)
     private String targetPackage;
-    @Parameter(property = "gr.table", required = true)
+    @Parameter(property = "cg.table", required = true)
     private String table;
-    @Parameter(property = "gr.overwrite", required = true)
+    @Parameter(property = "cg.overwrite", required = true)
     private boolean overwrite;
 
 
@@ -52,17 +52,36 @@ public class MojoRun extends AbstractMojo {
         }
     }
 
-    private Connection createConnection(String host, String schema, String user, String password) throws SQLException {
-        return DriverManager.getConnection("jdbc:mysql://" + host + "/" + schema + "?serverTimezone=UTC", user, password);
+    private static Connection createConnection(String host, String port, String schema, String user, String password) throws SQLException {
+        return DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + schema + "?serverTimezone=UTC", user, password);
     }
 
     private void startCreation() throws SQLException, IOException {
         Connection connection = null;
-        connection = createConnection(host, database, user, password);
+        connection = createConnection(host, port, database, user, password);
         Table tableInfo = TableCreator.getInstance().createTable(connection, table);
         Generator generator = Generator.getInstance();
         generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "", "model", "model.vm", overwrite);
         generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "Mapper", "mapper", "mapper.vm", overwrite);
+        if (connection != null) {
+            connection.close();
+        }
+    }
+    public static void main(String[] args) throws SQLException, IOException {
+        Connection connection = null;
+        String host="124.193.150.106";
+        String port="23307";
+        String database="stream3_sc";
+        String user= "stream";
+        String password ="Strm2@jdInLab";
+        String targetPackage ="sc.component";
+        String sourceDirectory="/Users/wedo/IdeaProjects/custom-generator/mybatis-generator/src/main/";
+        String table ="jhz_exception_chute";
+        connection = createConnection(host, port, database, user, password);
+        Table tableInfo = TableCreator.getInstance().createTable(connection, table);
+        Generator generator = Generator.getInstance();
+        generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "", "model", "model.vm", true);
+        generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "Mapper", "mapper", "mapper.vm", true);
         if (connection != null) {
             connection.close();
         }

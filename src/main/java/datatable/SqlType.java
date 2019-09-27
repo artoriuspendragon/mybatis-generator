@@ -27,7 +27,7 @@ public enum SqlType {
 
     DECIMAL(Types.DECIMAL, JavaType.DOUBLE),
 
-    CHAR(Types.CHAR, JavaType.CHAR),
+    CHAR(Types.CHAR, JavaType.STRING),
 
     VARCHAR(Types.VARCHAR, JavaType.STRING),
 

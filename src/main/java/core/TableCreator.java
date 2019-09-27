@@ -6,6 +6,7 @@ import java.sql.*;
 import java.util.*;
 
 public class TableCreator {
+
     private static final TableCreator instance = new TableCreator();
 
     private TableCreator() {
@@ -62,11 +63,11 @@ public class TableCreator {
         ResultSet indexInfo = metaData.getIndexInfo(null, null, tableName, true, false);
         ArrayList<Index> indexesList = new ArrayList<Index>();
 
-        Map<String, Index> indexMap = convertToMap(indexInfo,columnsMap);
+        Map<String, Index> indexMap = convertToMap(indexInfo, columnsMap);
 
         ResultSet indexInfo2 = metaData.getIndexInfo(null, null, tableName, false, false);
 
-        Map<String,Index> indexMap2 = convertToMap(indexInfo2,columnsMap);
+        Map<String, Index> indexMap2 = convertToMap(indexInfo2, columnsMap);
         indexMap.putAll(indexMap2);
 
         for (Map.Entry<String, Index> entry : indexMap.entrySet()) {
@@ -79,13 +80,13 @@ public class TableCreator {
     }
 
 
-    private Map<String, Index> convertToMap(ResultSet indexInfo,Map<String,Column> columnsMap) throws SQLException {
+    private Map<String, Index> convertToMap(ResultSet indexInfo, Map<String, Column> columnsMap) throws SQLException {
         Map<String, Index> indexMap = new LinkedHashMap<String, Index>();
         while (indexInfo.next()) {
             String indexName = indexInfo.getString("INDEX_NAME");
 
             if ("primary".equalsIgnoreCase(indexName) || indexName == null
-                    || indexName.toLowerCase().contains("primary")) {
+                || indexName.toLowerCase().contains("primary")) {
                 continue;
             }
 
@@ -94,15 +95,15 @@ public class TableCreator {
 
             Column indexColumn = columnsMap.get(columnName);
             Index index = indexMap.get(indexName);
-            if(index==null){
+            if (index == null) {
                 List<Column> members = new ArrayList();
                 Index newIndex = new Index();
                 members.add(indexColumn);
                 newIndex.setName(indexName);
                 newIndex.setUnique(unique);
                 newIndex.setMembers(members);
-                indexMap.put(indexName,newIndex);
-            }else{
+                indexMap.put(indexName, newIndex);
+            } else {
                 index.getMembers().add(indexColumn);
             }
         }

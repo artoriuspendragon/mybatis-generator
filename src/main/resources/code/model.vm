@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 public class ${className} implements java.io.Serializable {
 
     private static final long serialVersionUID = 1L;
-        
+
 #foreach($column in $table.columns)
     /** $!column.comment */
-    private ${utils.columnTypeToJavaType($column.type).getName()} ${utils.columnNameToFieldName($column.name)};
+    private ${utils.columnTypeToJavaType($column.type).getWrapperTypeName().getSimpleName()} ${utils.columnNameToFieldName($column.name)};
 
 #end
 
