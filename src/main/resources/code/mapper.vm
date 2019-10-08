@@ -179,6 +179,7 @@ public interface ${className}Mapper {
 
 #if($table.primaryKey.members.size() == 1)
     @Select("select $allFields from `${table.name}` where `$singlePrimary.name` > #{cursor} limit #{limit}")
+    #resultAnnotation()
     public List<$modelClass> getByCursorAndLimit(@Param("cursor") ${table.primaryKey.members[0].type.getJavaType().getName()} cursor, @Param("limit") int limit);
 #end
 
