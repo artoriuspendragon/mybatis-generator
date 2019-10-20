@@ -19,4 +19,11 @@ public class PrimaryKey {
 		this.members = members;
 	}
 
+
+	@Override
+	public String toString() {
+		return "PrimaryKey{" +
+				"members=" + members +
+				'}';
+	}
 }

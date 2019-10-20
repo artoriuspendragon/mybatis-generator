@@ -10,16 +10,12 @@ public class Column {
 
     private boolean autoIncrement;
 
+    private boolean nullable;
+
     public Column() {
         super();
     }
 
-    public Column(String name, SqlType type, String comment, boolean autoIncrement) {
-        this.name = name;
-        this.type = type;
-        this.comment = comment;
-        this.autoIncrement = autoIncrement;
-    }
 
     public String getName() {
         return name;
@@ -53,9 +49,22 @@ public class Column {
         this.autoIncrement = autoIncrement;
     }
 
-    @Override
-    public String toString() {
-        return "Column [name=" + name + ", type=" + type + ", comment=" + comment + "]";
+    public boolean isNullable() {
+        return nullable;
     }
 
+    public void setNullable(boolean nullable) {
+        this.nullable = nullable;
+    }
+
+    @Override
+    public String toString() {
+        return "Column{" +
+                "name='" + name + '\'' +
+                ", type=" + type +
+                ", comment='" + comment + '\'' +
+                ", autoIncrement=" + autoIncrement +
+                ", nullable=" + nullable +
+                '}';
+    }
 }

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 
 @Mojo(name = "generate")
 public class MojoRun extends AbstractMojo {
@@ -59,32 +60,19 @@ public class MojoRun extends AbstractMojo {
     private void startCreation() throws SQLException, IOException {
         Connection connection = null;
         connection = createConnection(host, port, database, user, password);
-        Table tableInfo = TableCreator.getInstance().createTable(connection, table);
+        List<Table> tableInfos = TableCreator.getInstance().createTable(connection, table, database);
         Generator generator = Generator.getInstance();
-        generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "", "model", "model.vm", overwrite);
-        generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "Mapper", "mapper", "mapper.vm", overwrite);
+        for (Table tableInfo : tableInfos) {
+            generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "", "model", "model.vm", overwrite);
+            generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "Mapper", "mapper", "mapper.vm", overwrite);
+        }
         if (connection != null) {
             connection.close();
         }
     }
+
     public static void main(String[] args) throws SQLException, IOException {
-        Connection connection = null;
-        String host="124.193.150.106";
-        String port="23307";
-        String database="stream3_sc";
-        String user= "stream";
-        String password ="Strm2@jdInLab";
-        String targetPackage ="sc.component";
-        String sourceDirectory="/Users/wedo/IdeaProjects/custom-generator/mybatis-generator/src/main/";
-        String table ="jhz_exception_chute";
-        connection = createConnection(host, port, database, user, password);
-        Table tableInfo = TableCreator.getInstance().createTable(connection, table);
-        Generator generator = Generator.getInstance();
-        generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "", "model", "model.vm", true);
-        generator.create(sourceDirectory, tableInfo, targetPackage, targetPackage, "Mapper", "mapper", "mapper.vm", true);
-        if (connection != null) {
-            connection.close();
-        }
+
     }
 
     public String getHost() {

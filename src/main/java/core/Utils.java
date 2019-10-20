@@ -146,4 +146,22 @@ public class Utils {
     public static JavaType columnTypeToJavaType(SqlType type) {
         return JavaType.fromSqlType(type);
     }
+
+    public static String columnToJavaTypeString(Column column) {
+        if (column.getType().getJavaType().equals(JavaType.DATE)) {
+            return "java.util.Date";
+        }
+        if (column.isNullable()) {
+            return column.getType().getJavaType().getWrapperTypeName().getSimpleName();
+        } else {
+            return column.getType().getJavaType().getPrimitiveTypeName().getSimpleName();
+        }
+    }
+
+    public static String columnToWrapperJavaTypeString(Column column) {
+        if (column.getType().getJavaType().equals(JavaType.DATE)) {
+            return "java.util.Date";
+        }
+        return column.getType().getJavaType().getWrapperTypeName().getSimpleName();
+    }
 }

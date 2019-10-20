@@ -14,7 +14,7 @@ public class ${className} implements java.io.Serializable {
 
 #foreach($column in $table.columns)
     /** $!column.comment */
-    private ${utils.columnTypeToJavaType($column.type).getWrapperTypeName().getSimpleName()} ${utils.columnNameToFieldName($column.name)};
+    private ${utils.columnToJavaTypeString($column)} ${utils.columnNameToFieldName($column.name)};
 
 #end
 

@@ -157,7 +157,7 @@ public interface ${className}Mapper {
     @Select("#getMapByPrimaryKey($table $singlePrimary)")
     #resultAnnotation()
     #mapAnnotation($singlePrimary)
-    public Map<${utils.columnTypeToJavaType($singlePrimary.type).getWrapperTypeName().getSimpleName()},$modelClass> getMapBy${utils.tableNameToClassName($singlePrimary.name)}(#singleParamListStatement($singlePrimary));
+    public Map<${utils.columnToWrapperJavaTypeString($singlePrimary)},$modelClass> getMapBy${utils.tableNameToClassName($singlePrimary.name)}(#singleParamListStatement($singlePrimary));
 
     @Update("#updateByPrimaryKeySql($table $table.primaryKey)")
     public int updateBy${utils.getMethodName($table.primaryKey)}($modelClass $modelInstance);

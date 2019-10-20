@@ -16,13 +16,24 @@ public class TableCreator {
         return instance;
     }
 
-    public Table createTable(Connection connection, String tableName) throws SQLException {
+    public List<Table> createTable(Connection connection, String tableNamePattern, String schema) throws SQLException {
+        DatabaseMetaData metaData = connection.getMetaData();
+        ResultSet tables = metaData.getTables(schema, schema, tableNamePattern, null);
+        List<Table> tableList = new ArrayList<>();
+        while (tables.next()) {
+            String tableName = tables.getString("TABLE_NAME");
+            tableList.add(createSingleTable(connection, tableName, schema));
+        }
+        return tableList;
+    }
+
+    public Table createSingleTable(Connection connection, String tableName, String schema) throws SQLException {
 
         Table table = new Table();
         table.setName(tableName);
 
         DatabaseMetaData metaData = connection.getMetaData();
-        ResultSet columns = metaData.getColumns(null, null, tableName, null);
+        ResultSet columns = metaData.getColumns(schema, schema, tableName, null);
 
         Map<String, Column> columnsMap = new HashMap<String, Column>();
         List<Column> columnsList = new ArrayList<Column>();
@@ -31,6 +42,7 @@ public class TableCreator {
             String columnName = columns.getString("COLUMN_NAME");
             int dataType = columns.getInt("DATA_TYPE");
             String autoincrement = columns.getString("IS_AUTOINCREMENT");
+            int nullable = columns.getInt("NULLABLE");
 
             String comment = columns.getString("REMARKS");
 
@@ -39,6 +51,7 @@ public class TableCreator {
             column.setComment(comment);
             column.setType(SqlType.fromDataType(dataType));
             column.setAutoIncrement("YES".equalsIgnoreCase(autoincrement));
+            column.setNullable(nullable != 0);
 
             columnsList.add(column);
             columnsMap.put(columnName, column);
@@ -46,7 +59,7 @@ public class TableCreator {
 
         table.setColumns(columnsList);
 
-        ResultSet primaryKeys = metaData.getPrimaryKeys(null, null, tableName);
+        ResultSet primaryKeys = metaData.getPrimaryKeys(schema, schema, tableName);
         while (primaryKeys.next()) {
             String columnName = primaryKeys.getString("COLUMN_NAME");
 
@@ -60,12 +73,12 @@ public class TableCreator {
             table.setPrimaryKey(key);
         }
 
-        ResultSet indexInfo = metaData.getIndexInfo(null, null, tableName, true, false);
+        ResultSet indexInfo = metaData.getIndexInfo(schema, schema, tableName, true, false);
         ArrayList<Index> indexesList = new ArrayList<Index>();
 
         Map<String, Index> indexMap = convertToMap(indexInfo, columnsMap);
 
-        ResultSet indexInfo2 = metaData.getIndexInfo(null, null, tableName, false, false);
+        ResultSet indexInfo2 = metaData.getIndexInfo(schema, schema, tableName, false, false);
 
         Map<String, Index> indexMap2 = convertToMap(indexInfo2, columnsMap);
         indexMap.putAll(indexMap2);
@@ -86,7 +99,7 @@ public class TableCreator {
             String indexName = indexInfo.getString("INDEX_NAME");
 
             if ("primary".equalsIgnoreCase(indexName) || indexName == null
-                || indexName.toLowerCase().contains("primary")) {
+                    || indexName.toLowerCase().contains("primary")) {
                 continue;
             }
 
