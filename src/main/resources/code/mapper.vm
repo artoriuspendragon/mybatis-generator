@@ -143,7 +143,7 @@ $sql#end
 public interface ${className}Mapper {
 
     @Insert("insert into `$table.name` ($liteFields) values (#valuesStatement($table.columns))")
-    @Options(useGeneratedKeys = true, keyProperty = "${table.primaryKey.members[0].name}", keyColumn = "${table.primaryKey.members[0].name}")
+    @Options(useGeneratedKeys = true, keyProperty = "${utils.columnNameToFieldName($table.primaryKey.members[0].name)}", keyColumn = "${table.primaryKey.members[0].name}")
     public int insert($modelClass $modelInstance);
 
     @Select("select $allFields from `${table.name}`")
