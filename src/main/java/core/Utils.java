@@ -164,4 +164,33 @@ public class Utils {
         }
         return column.getType().getJavaType().getWrapperTypeName().getSimpleName();
     }
+
+    public static String singleToMultiName(String name) {
+        char lastChar = name.charAt(name.length() - 1);
+        if (lastChar == 's' || lastChar == 'x') {
+            return name + "es";
+        } else if (lastChar == 'h') {
+            if (name.length() > 1) {
+                char secondLastChar = name.charAt(name.length() - 2);
+                if (secondLastChar == 'c' || secondLastChar == 's') {
+                    return name + "es";
+                }
+            }
+        } else if (lastChar == 'y') {
+            if (name.length() > 1) {
+                char secondLastChar = name.charAt(name.length() - 2);
+                if (secondLastChar != 'a' && secondLastChar != 'e' && secondLastChar != 'i' && secondLastChar != 'o' && secondLastChar != 'u') {
+                    return name.substring(0, name.length() - 1) + "ies";
+                }
+            }
+        }
+        return name + "s";
+    }
+
+    public static void main(String[] args){
+        String[] testWords=new String[]{"a","s","x","y","day","dog","house","tomato","brush","church","kiss","box","kilo","photo","piano","city","baby","holiday","guy","calf","half","knife","leaf","life","loaf","self","sheaf","shelf","thief","wife","wolf","cliff","safe","beef","man","woman","person","foot","tooth","goose","mousethat","this","child","deer","fish","sheep","Chinese","information","knowledge","homework","education","courage","luck","clarity","honesty","butter","love","news","work","mud","weather","help","advice","water","fun","silence","sugar","coal","spelling","money"};
+        for (String testWord : testWords) {
+            System.out.println(testWord+"  ->  "+singleToMultiName(testWord));
+        }
+    }
 }

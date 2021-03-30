@@ -33,7 +33,7 @@ import java.util.Map;
 #foreach($column in $columns)#if($velocityCount>1),#end#none()@Param("${utils.columnNameToFieldName($column.name)}") ${column.type.getJavaType().getName()} ${utils.columnNameToFieldName($column.name)}#end
 #end
 #macro(singleParamListStatement $column)
-#none()@Param("${utils.columnNameToFieldName($column.name)}") Collection<${column.type.getJavaType().getWrapperTypeName().getSimpleName()}> ${utils.columnNameToFieldName($column.name)}#end
+#none()@Param("${utils.singleToMultiName(${utils.columnNameToFieldName($column.name)})}") Collection<${column.type.getJavaType().getWrapperTypeName().getSimpleName()}> ${utils.singleToMultiName(${utils.columnNameToFieldName($column.name)})}#end
 #macro(getByIndexSql $table $idx)
 #set($sepFlag=0)
 #set($sql="select $allFields from `${table.name}` where")
@@ -48,7 +48,7 @@ $sql#end
 #macro(getMapByPrimaryKey $table $primaryKey)
 #set($sepFlag=0)
 #set($sql="<script> select $allFields from `${table.name}` where")
-#set($sql="$sql `$primaryKey.name` in <foreach collection = '${utils.columnNameToFieldName($primaryKey.name)}' item='id' index='index' open=' (' separator=','  close=')'>#{id}</foreach> </script>")
+#set($sql="$sql `$primaryKey.name` in <foreach collection = '${utils.singleToMultiName(${utils.columnNameToFieldName($primaryKey.name)})}' item='id' index='index' open=' (' separator=','  close=')'>#{id}</foreach> </script>")
 $sql#end
 #macro(getByIndexSqlFirst $table $idx)
 #set($sepFlag=0)
@@ -128,13 +128,28 @@ $sql#end
 #set($sql="$sql `$part.name`=#{${utils.columnNameToFieldName($part.name)}}")
 #end
 $sql#end
+#macro(deleteByPrimaryKeySql $table $idx)
+#set($sql="delete from `$table.name` ")
+#set($sepFlag=0)
+#set($sql="$sql where")
+#foreach($part in $idx.members)
+#if($sepFlag > 0)
+#set($sql="$sql and")
+#end
+#set($sepFlag=1)
+#set($sql="$sql `$part.name`=#{${utils.columnNameToFieldName($part.name)}}")
+#end
+$sql#end
 #macro(resultAnnotation)
-@Results({
+@Results(id = "${className}Map", value={
   #foreach($column in $table.columns)
       @Result(property = "${utils.columnNameToFieldName($column.name)}", column = "$column.name")#if($velocityCount != $table.columns.size()),
   #end
 #end
 })
+#end
+#macro(resultMapAnnotation)
+@ResultMap("${className}Map")
 #end
 #macro(mapAnnotation $key)
 @MapKey("${utils.columnNameToFieldName($key.name)}")
@@ -146,40 +161,51 @@ public interface ${className}Mapper {
     @Options(useGeneratedKeys = true, keyProperty = "${utils.columnNameToFieldName($table.primaryKey.members[0].name)}", keyColumn = "${table.primaryKey.members[0].name}")
     public int insert($modelClass $modelInstance);
 
-    @Select("select $allFields from `${table.name}`")
     #resultAnnotation()
+    @Select("select $allFields from `${table.name}`")
     public List<$modelClass> getAll();
 
     @Select("#getByIndexSql($table $table.primaryKey)")
-    #resultAnnotation()
+    #resultMapAnnotation()
     public $modelClass getBy${utils.getMethodName($table.primaryKey)}(#paramStatement($table.primaryKey.members));
 
     @Select("#getMapByPrimaryKey($table $singlePrimary)")
-    #resultAnnotation()
+    #resultMapAnnotation()
     #mapAnnotation($singlePrimary)
-    public Map<${utils.columnToWrapperJavaTypeString($singlePrimary)},$modelClass> getMapBy${utils.tableNameToClassName($singlePrimary.name)}(#singleParamListStatement($singlePrimary));
+    public Map<${utils.columnToWrapperJavaTypeString($singlePrimary)},$modelClass> getMapBy${utils.singleToMultiName(${utils.tableNameToClassName($singlePrimary.name)})}(#singleParamListStatement($singlePrimary));
 
     @Update("#updateByPrimaryKeySql($table $table.primaryKey)")
     public int updateBy${utils.getMethodName($table.primaryKey)}($modelClass $modelInstance);
 
+    @Delete("#deleteByPrimaryKeySql($table $table.primaryKey)")
+    public int deleteBy${utils.getMethodName($table.primaryKey)}(#paramStatement($table.primaryKey.members));
+
 #foreach($idx in $table.indexes)
 #if($idx.isUnique())
     @Select("#getByIndexSql($table $idx)")
-    #resultAnnotation()
+    #resultMapAnnotation()
     public $modelClass getBy${utils.getMethodName($idx)}(#paramStatement($idx.members));
 
     @Update("#updateByIndexSql($table $idx)")
     public int updateBy${utils.getMethodName($idx)}($modelClass $modelInstance);
+
+    @Delete("#deleteByPrimaryKeySql($table $idx)")
+    public int deleteBy${utils.getMethodName($idx)}($modelClass $modelInstance);
+
 #else
     @Select("#getByIndexSql($table $idx)")
-    #resultAnnotation()
+    #resultMapAnnotation()
     public List<$modelClass> getBy${utils.getMethodName($idx)}(#paramStatement($idx.members));
+
+    @Delete("#deleteByPrimaryKeySql($table $idx)")
+    public int deleteBy${utils.getMethodName($idx)}(#paramStatement($idx.members));
+
 #end
 #end
 
 #if($table.primaryKey.members.size() == 1)
     @Select("select $allFields from `${table.name}` where `$singlePrimary.name` > #{cursor} limit #{limit}")
-    #resultAnnotation()
+    #resultMapAnnotation()
     public List<$modelClass> getByCursorAndLimit(@Param("cursor") ${table.primaryKey.members[0].type.getJavaType().getName()} cursor, @Param("limit") int limit);
 #end
 
